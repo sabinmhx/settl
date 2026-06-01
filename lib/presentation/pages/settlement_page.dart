@@ -54,10 +54,21 @@ class SettlementPage extends StatelessWidget {
                 ),
               if (expenses.isNotEmpty) const SizedBox(height: 16),
               Card(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text(opt.summaryMessage, style: const TextStyle(fontSize: 15)),
+                  child: Text(
+                    opt.summaryMessage,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ),
               ),
               if (pairs.any((p) => p.remaining > 0.01)) ...[

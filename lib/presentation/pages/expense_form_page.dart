@@ -181,10 +181,18 @@ class _ExpenseFormBodyState extends State<_ExpenseFormBody> {
               prefixText: '\$ ',
               hintText: '0.00',
               filled: true,
-              fillColor: AppColors.primary.withValues(alpha: 0.08),
+              fillColor: AppColors.primary.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.15)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.15)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
               ),
             ),
             onChanged: cubit.setAmount,
@@ -375,15 +383,19 @@ class _Banner extends StatelessWidget {
     final color = isError ? AppColors.danger : AppColors.primary;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
       ),
       child: Text(
         message,
-        style: TextStyle(color: color, fontSize: 13),
+        style: TextStyle(
+          color: color,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

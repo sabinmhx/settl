@@ -2,7 +2,6 @@ import 'package:get_it/get_it.dart';
 
 import '../../data/datasources/local_ledger_datasource.dart';
 import '../../data/repositories/ledger_repository_impl.dart';
-import '../../data/services/demo_data_service.dart';
 import '../../data/services/pdf_report_service.dart';
 import '../../domain/repositories/ledger_repository.dart';
 import '../../domain/services/group_analytics_service.dart';
@@ -20,7 +19,6 @@ import '../../domain/usecases/get_settlement.dart';
 import '../../domain/usecases/get_settlement_payments.dart';
 import '../../domain/usecases/save_settlement_payment.dart';
 import '../../domain/usecases/delete_settlement_payment.dart';
-import '../../domain/usecases/seed_demo_group.dart';
 import '../../domain/usecases/update_expense.dart';
 import '../../domain/usecases/update_group_members.dart';
 
@@ -32,11 +30,10 @@ Future<void> configureDependencies() async {
   sl.registerSingleton<LocalLedgerDataSource>(local);
 
   sl.registerLazySingleton(GroupAnalyticsService.new);
-  sl.registerLazySingleton(() => DemoDataService(sl<LocalLedgerDataSource>()));
   sl.registerLazySingleton(PdfReportService.new);
 
   sl.registerLazySingleton<LedgerRepository>(
-    () => LedgerRepositoryImpl(sl(), sl(), sl(), sl()),
+    () => LedgerRepositoryImpl(sl(), sl(), sl()),
   );
 
   sl.registerLazySingleton(() => GetGroups(sl()));
@@ -55,6 +52,5 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton(() => DeleteSettlementPayment(sl()));
   sl.registerLazySingleton(() => GetGraphSnapshot(sl()));
   sl.registerLazySingleton(() => GetAnalytics(sl()));
-  sl.registerLazySingleton(() => SeedDemoGroup(sl()));
   sl.registerLazySingleton(() => ExportPdfReport(sl()));
 }

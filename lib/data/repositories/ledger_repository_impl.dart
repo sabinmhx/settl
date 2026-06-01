@@ -11,20 +11,17 @@ import '../../domain/services/trend_analyzer.dart';
 import 'package:printing/printing.dart';
 
 import '../datasources/local_ledger_datasource.dart';
-import '../services/demo_data_service.dart';
 import '../services/pdf_report_service.dart';
 
 class LedgerRepositoryImpl implements LedgerRepository {
   LedgerRepositoryImpl(
     this._local,
     this._analytics,
-    this._demo,
     this._pdf,
   );
 
   final LocalLedgerDataSource _local;
   final GroupAnalyticsService _analytics;
-  final DemoDataService _demo;
   final PdfReportService _pdf;
 
   @override
@@ -115,9 +112,6 @@ class LedgerRepositoryImpl implements LedgerRepository {
     final expenses = await getExpenses(groupId);
     return TrendAnalyzer.categoryBreakdown(expenses);
   }
-
-  @override
-  Future<Group> seedDemoGroup() => _demo.seedRoommateDemo();
 
   @override
   Future<void> exportGroupPdf(String groupId) async {

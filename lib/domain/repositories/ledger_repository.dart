@@ -22,6 +22,5 @@ abstract class LedgerRepository {
   Future<GraphSnapshot> getGraphSnapshot(String groupId);
   Future<GroupAnalyticsSnapshot> getAnalytics(String groupId);
   Future<Map<String, double>> getCategoryBreakdown(String groupId);
-  Future<Group> seedDemoGroup();
   Future<void> exportGroupPdf(String groupId);
 }

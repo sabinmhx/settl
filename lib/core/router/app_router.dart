@@ -38,7 +38,7 @@ GoRouter createAppRouter() {
         path: AppRoutes.home,
         builder: (context, state) => BlocProvider(
           create: (_) =>
-              GroupsListBloc(sl(), sl(), sl(), sl())..add(GroupsListStarted()),
+              GroupsListBloc(sl(), sl(), sl())..add(GroupsListStarted()),
           child: const HomePage(),
         ),
       ),

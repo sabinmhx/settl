@@ -1,9 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
-import '../widgets/app_navigation.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/entities/expense.dart';
@@ -12,6 +12,7 @@ import '../blocs/group_detail/group_detail_bloc.dart';
 import '../blocs/group_detail/group_detail_event.dart';
 import '../blocs/group_detail/group_detail_state.dart';
 import '../utils/expense_display.dart';
+import '../widgets/app_navigation.dart';
 import '../widgets/member_balances_section.dart';
 
 class GroupDetailPage extends StatefulWidget {
@@ -97,6 +98,7 @@ class _GroupDetailBody extends StatelessWidget {
       appBar: AppBar(
         leading: const BackToGroupsButton(),
         title: Text(group.name),
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -105,7 +107,7 @@ class _GroupDetailBody extends StatelessWidget {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text('Delete group?'),
-                  content: const Text('This removes all expenses.'),
+                  content: const Text('This removes all expenses. This action cannot be undone.'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -130,68 +132,58 @@ class _GroupDetailBody extends StatelessWidget {
         onRefresh: () async => bloc.add(GroupDetailRefreshed(groupId)),
         color: AppColors.primary,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
           children: [
             _InsightsCard(
               onTap: () => context.push('/groups/$groupId/insights', extra: group),
               totalSpend: analytics?.totalSpending,
               fairness: analytics?.fairnessScore,
             ),
-            const SizedBox(height: 12),
-            MemberBalancesSection(
-              group: group,
-              expenses: state.expenses,
-              payments: state.payments,
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             if (settlement != null)
-              Card(
-                child: ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.handshake_outlined,
-                        color: AppColors.accent, size: 20),
-                  ),
-                  title: const Text('Settlement'),
-                  subtitle: Text(settlement.summaryMessage),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    await context.push('/groups/$groupId/settlement', extra: group);
-                    if (context.mounted) {
-                      bloc.add(GroupDetailRefreshed(groupId));
-                    }
-                  },
-                ),
+              _SettlementCard(
+                settlement: settlement,
+                onTap: () async {
+                  await context.push('/groups/$groupId/settlement', extra: group);
+                  if (context.mounted) {
+                    bloc.add(GroupDetailRefreshed(groupId));
+                  }
+                },
               ),
-            const SizedBox(height: 20),
-            const Text('Members',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-            const SizedBox(height: 8),
-            ...group.members.map(
-              (m) => Card(
-                margin: const EdgeInsets.only(bottom: 6),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color(m.colorHex),
-                    child: Text(
-                      m.name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  const Text(
+                    'Members',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  title: Text(m.name),
-                  trailing: group.members.length > 1
-                      ? IconButton(
-                          icon: const Icon(Icons.close, size: 18),
-                          onPressed: () => bloc.add(GroupDetailRemoveMember(m.id)),
-                        )
-                      : null,
-                ),
+                  const Spacer(),
+                  Text(
+                    '${group.members.length}',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 12),
+            ...group.members.map(
+              (m) => _MemberTile(
+                member: m,
+                canRemove: group.members.length > 1,
+                onRemove: () => bloc.add(GroupDetailRemoveMember(m.id)),
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -200,49 +192,87 @@ class _GroupDetailBody extends StatelessWidget {
                     decoration: const InputDecoration(
                       labelText: 'Add member',
                       isDense: true,
+                      hintText: 'Enter name',
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                FilledButton.tonal(
-                  onPressed: () {
-                    bloc.add(GroupDetailAddMember(memberCtrl.text));
-                    memberCtrl.clear();
-                  },
-                  child: const Icon(Icons.person_add_outlined),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Text(
-                  'Expenses (${state.expenses.length})',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                const Spacer(),
-                Text(
-                  analytics != null ? formatMoney(analytics.totalSpending) : '',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.accent,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: FilledButton(
+                    onPressed: () {
+                      if (memberCtrl.text.trim().isNotEmpty) {
+                        bloc.add(GroupDetailAddMember(memberCtrl.text.trim()));
+                        memberCtrl.clear();
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    child: const Icon(Icons.person_add_outlined),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 28),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  Text(
+                    'Expenses (${state.expenses.length})',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (analytics != null)
+                    Text(
+                      formatMoney(analytics.totalSpending),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             if (state.expenses.isEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.receipt_long_outlined,
-                          size: 40, color: AppColors.textSecondary.withValues(alpha: 0.6)),
-                      const SizedBox(height: 8),
-                      const Text(
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 48,
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
                         'No expenses yet',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -256,34 +286,21 @@ class _GroupDetailBody extends StatelessWidget {
                   onTap: () => _openExpenseForm(context, expense: e),
                 ),
               ),
-          ],
-        ),
-      ),
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryMuted],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+            MemberBalancesSection(
+              group: group,
+              expenses: state.expenses,
+              payments: state.payments,
             ),
           ],
         ),
-        child: FloatingActionButton.extended(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          foregroundColor: AppColors.background,
-          onPressed: () => _openExpenseForm(context),
-          icon: const Icon(Icons.add_rounded, size: 26),
-          label: const Text(
-            'Add expense',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-          ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openExpenseForm(context),
+        elevation: 8,
+        icon: const Icon(Icons.add, size: 24),
+        label: const Text(
+          'Add expense',
+          style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.5),
         ),
       ),
     );
@@ -303,57 +320,221 @@ class _InsightsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
-          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppColors.accent.withValues(alpha: 0.15),
-                AppColors.primary.withValues(alpha: 0.08),
-              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary.withValues(alpha: 0.08),
+                AppColors.accent.withValues(alpha: 0.05),
+              ],
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.insights, color: AppColors.primary, size: 28),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
                   children: [
-                    const Text(
-                      'Insights',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      totalSpend != null && fairness != null
-                          ? '${formatMoney(totalSpend!)} spent · ${fairness!.toStringAsFixed(0)}% fair'
-                          : 'Graph, analytics & trends',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: const Icon(
+                        Icons.insights,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Insights',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 17,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            totalSpend != null && fairness != null
+                                ? '${formatMoney(totalSpend!)} · ${fairness!.toStringAsFixed(0)}% fair'
+                                : 'View analytics & trends',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: AppColors.textSecondary,
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSecondary),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettlementCard extends StatelessWidget {
+  final dynamic settlement;
+  final VoidCallback onTap;
+
+  const _SettlementCard({required this.settlement, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.accent.withValues(alpha: 0.1),
+              AppColors.primary.withValues(alpha: 0.05),
             ],
           ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.accent.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.handshake_outlined,
+                      color: AppColors.accent,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Settlement',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          settlement.summaryMessage,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MemberTile extends StatelessWidget {
+  final dynamic member;
+  final bool canRemove;
+  final VoidCallback onRemove;
+
+  const _MemberTile({
+    required this.member,
+    required this.canRemove,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Color(member.colorHex),
+            child: Text(
+              member.name[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          title: Text(
+            member.name,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          trailing: canRemove
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 20, color: AppColors.danger),
+                  onPressed: onRemove,
+                )
+              : null,
         ),
       ),
     );
@@ -376,71 +557,90 @@ class _ExpenseTile extends StatelessWidget {
     final payerText = ExpenseDisplay.payerSummary(expense, group.members);
     final splitText = ExpenseDisplay.splitSummary(expense, group.members);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _categoryIcon(expense.category),
-                  color: AppColors.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      expense.title,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      splitText.isNotEmpty
-                          ? '${expense.category.label} · $splitText · $payerText paid'
-                          : '${expense.category.label} · $payerText paid',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    ExpenseBalanceDetails(
-                      expense: expense,
-                      members: group.members,
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
                 children: [
-                  Text(
-                    formatMoney(expense.amount),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _categoryIcon(expense.category),
                       color: AppColors.primary,
+                      size: 22,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Icon(Icons.edit_outlined, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          expense.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          splitText.isNotEmpty
+                              ? '${expense.category.label} · $splitText · $payerText paid'
+                              : '${expense.category.label} · $payerText paid',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatMoney(expense.amount),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Icon(Icons.edit_outlined, size: 14, color: AppColors.textSecondary),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -464,5 +664,20 @@ class _ExpenseTile extends StatelessWidget {
       case ExpenseCategory.other:
         return Icons.receipt_outlined;
     }
+  }
+}
+
+class ExpenseBalanceDetails extends StatelessWidget {
+  const ExpenseBalanceDetails({
+    required this.expense,
+    required this.members,
+  });
+
+  final Expense expense;
+  final List members;
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
   }
 }

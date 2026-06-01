@@ -10,8 +10,6 @@ class GroupsListStarted extends GroupsListEvent {}
 
 class GroupsListRefreshed extends GroupsListEvent {}
 
-class GroupsListSeedDemoRequested extends GroupsListEvent {}
-
 class GroupsListDeleteRequested extends GroupsListEvent {
   const GroupsListDeleteRequested(this.groupId);
   final String groupId;

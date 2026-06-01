@@ -28,7 +28,7 @@ class SettlApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Settl',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
       routerConfig: router,
     );
   }

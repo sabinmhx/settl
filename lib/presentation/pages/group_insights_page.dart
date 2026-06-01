@@ -57,7 +57,7 @@ class GroupInsightsPage extends StatelessWidget {
                       end: Alignment.bottomRight,
                       colors: [
                         AppColors.surface,
-                        AppColors.primary.withValues(alpha: 0.08),
+                        AppColors.primary.withValues(alpha: 0.06),
                       ],
                     ),
                   ),
@@ -68,6 +68,7 @@ class GroupInsightsPage extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -80,6 +81,7 @@ class GroupInsightsPage extends StatelessWidget {
                   Tab(text: 'Overview'),
                   Tab(text: 'Analytics'),
                 ],
+                dividerColor: AppColors.cardBorder,
               ),
             ),
           ],
