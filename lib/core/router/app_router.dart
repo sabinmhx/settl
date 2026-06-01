@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ledgerx/presentation/blocs/group_detail/group_detail_event.dart';
-import 'package:ledgerx/presentation/blocs/groups_list/groups_list_event.dart';
+import 'package:settl/presentation/blocs/group_detail/group_detail_event.dart';
+import 'package:settl/presentation/blocs/groups_list/groups_list_event.dart';
 
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/group.dart';
@@ -66,8 +66,8 @@ GoRouter createAppRouter() {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return BlocProvider(
-            create: (_) => ExpenseFormCubit(sl(), sl(), sl(), sl())
-              ..init(groupId: id),
+            create: (_) =>
+                ExpenseFormCubit(sl(), sl(), sl(), sl())..init(groupId: id),
             child: ExpenseFormPage(groupId: id),
           );
         },
@@ -78,8 +78,9 @@ GoRouter createAppRouter() {
           final id = state.pathParameters['id']!;
           final expense = state.extra as Expense;
           return BlocProvider(
-            create: (_) => ExpenseFormCubit(sl(), sl(), sl(), sl())
-              ..init(groupId: id, expense: expense),
+            create: (_) =>
+                ExpenseFormCubit(sl(), sl(), sl(), sl())
+                  ..init(groupId: id, expense: expense),
             child: ExpenseFormPage(groupId: id, expenseToEdit: expense),
           );
         },
@@ -89,8 +90,9 @@ GoRouter createAppRouter() {
         builder: (context, state) {
           final group = state.extra as Group;
           return BlocProvider(
-            create: (_) => SettlementBloc(sl(), sl(), sl(), sl(), sl(), sl())
-              ..add(SettlementStarted(group.id)),
+            create: (_) =>
+                SettlementBloc(sl(), sl(), sl(), sl(), sl(), sl())
+                  ..add(SettlementStarted(group.id)),
             child: SettlementPage(group: group),
           );
         },
@@ -105,8 +107,9 @@ GoRouter createAppRouter() {
                 create: (_) => GraphBloc(sl())..add(GraphStarted(group.id)),
               ),
               BlocProvider(
-                create: (_) => AnalyticsBloc(sl(), sl(), sl())
-                  ..add(AnalyticsStarted(group)),
+                create: (_) =>
+                    AnalyticsBloc(sl(), sl(), sl())
+                      ..add(AnalyticsStarted(group)),
               ),
             ],
             child: GroupInsightsPage(group: group),
