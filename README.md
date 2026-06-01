@@ -14,7 +14,8 @@ A modern Flutter app for tracking shared expenses and settling debts within grou
 - Clean and intuitive UI
 
 ## 📱 Screenshots
-<img src="assets/home_page.jpg" width="180" />
-<img src="assets/group_detail_page.jpg" width="180" />
-<img src="assets/settlement_page.jpg" width="180" />
-
+<p>
+  <img src="assets/home_page.jpg" width="180" />
+  <img src="assets/group_detail_page.jpg" width="180" />
+  <img src="assets/settlement_page.jpg" width="180" />
+</p>
